@@ -132,8 +132,10 @@ class Snake(GameObject):
                 0, (self.positions[0][0], self.positions[0][1] + 20))
             self.last = self.positions[-1]
             self.positions.pop()
+            
         if self.length > len(self.positions):
             self.positions.append(self.last)
+
         for i in range(len(self.positions)):
             if self.positions[i][0] > 640:  # Выход за правую грань
                 new_coord_x = self.positions[i][0] % 640
@@ -207,11 +209,9 @@ def handle_keys(game_object):
             elif event.key == pygame.K_DOWN and game_object.direction != UP:
                 game_object.next_direction = DOWN
             elif event.key == pygame.K_LEFT and game_object.direction != RIGHT:
-                print('Нажали  направо')
                 game_object.next_direction = LEFT
             elif event.key == pygame.K_RIGHT and game_object.direction != LEFT:
                 game_object.next_direction = RIGHT
-                print('Нажали  налево')
 
 
 def main():
@@ -223,19 +223,7 @@ def main():
 
     while running:
         clock.tick(SPEED)
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                raise SystemExit
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_UP and snake1.direction != DOWN:
-                    snake1.next_direction = UP
-                elif event.key == pygame.K_DOWN and snake1.direction != UP:
-                    snake1.next_direction = DOWN
-                elif event.key == pygame.K_LEFT and snake1.direction != RIGHT:
-                    snake1.next_direction = LEFT
-                elif event.key == pygame.K_RIGHT and snake1.direction != LEFT:
-                    snake1.next_direction = RIGHT
+        handle_keys(snake1)
 
         pygame.display.flip()
 

@@ -69,7 +69,7 @@ class Apple(GameObject):
         print(Apple.position)
 
     def randomize_position(self):
-        """Докстринг"""
+        """Вычисление позиции яблока"""
         x_pos = randint(0, GRID_WIDTH - GRID_SIZE) * GRID_SIZE
         y_pos = randint(0, GRID_HEIGHT - GRID_SIZE) * GRID_SIZE
         Apple.position = (x_pos, y_pos)
@@ -99,7 +99,7 @@ class Snake(GameObject):
 
     # Метод обновления направления после нажатия на кнопку
     def update_direction(self):
-        """Докстринг"""
+        """Ищем новое направление"""
         if self.next_direction:
             self.direction = self.next_direction
             self.next_direction = None
@@ -109,7 +109,7 @@ class Snake(GameObject):
         return self.positions[0]
 
     def move(self):
-        """Докстринг"""
+        """Движение змейки"""
         self.get_head_position()
         # print(self.get_head_position())
         if self.direction == RIGHT:
@@ -172,7 +172,7 @@ class Snake(GameObject):
             pygame.draw.rect(surface, BOARD_BACKGROUND_COLOR, last_rect)
 
     def reset(self):
-        """Докстринг"""
+        """Сбрасываем змейку при столкновении"""
         self.length = 1
         self.positions = [((SCREEN_WIDTH // 2), (SCREEN_HEIGHT // 2))]
         list = [UP, DOWN, RIGHT, LEFT]

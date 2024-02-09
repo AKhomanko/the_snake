@@ -115,51 +115,34 @@ class Snake(GameObject):
         if self.direction == RIGHT:
             self.positions.insert(
                 0, (self.positions[0][0] + 20, self.positions[0][1]))
-            self.last = self.positions[-1]
-            self.positions.pop()
         elif self.direction == LEFT:
             self.positions.insert(
                 0, (self.positions[0][0] - 20, self.positions[0][1]))
-            self.last = self.positions[-1]
-            self.positions.pop()
         elif self.direction == UP:
             self.positions.insert(
                 0, (self.positions[0][0], self.positions[0][1] - 20))
-            self.last = self.positions[-1]
-            self.positions.pop()
         elif self.direction == DOWN:
             self.positions.insert(
                 0, (self.positions[0][0], self.positions[0][1] + 20))
-            self.last = self.positions[-1]
-            self.positions.pop()
-            
+        self.last = self.positions[-1]
+        self.positions.pop()
+
         if self.length > len(self.positions):
             self.positions.append(self.last)
 
         for i in range(len(self.positions)):
-            if self.positions[i][0] > 640:  # Выход за правую грань
+            if (self.positions[i][0] > 640 or self.positions[i][0] < 0):
+                # Выход за грань по оси х
                 new_coord_x = self.positions[i][0] % 640
                 tuple1 = self.positions[i]
                 list1 = list(tuple1)
                 list1[0] = new_coord_x
                 tuple1 = tuple(list1)
                 self.positions[i] = tuple1
-            elif self.positions[i][0] < 0:  # Выход за левую грань
-                new_coord_x = self.positions[i][0] % 640
-                tuple1 = self.positions[i]
-                list1 = list(tuple1)
-                list1[0] = new_coord_x
-                tuple1 = tuple(list1)
-                self.positions[i] = tuple1
-            elif self.positions[i][1] > 480:  # Выход за нижнюю грань
+
+            if self.positions[i][1] > 480 or self.positions[i][1] < 0:
+                # Выход за грань по оси у
                 new_coord_y = self.positions[i][1] % 480
-                tuple1 = self.positions[i]
-                list1 = list(tuple1)
-                list1[1] = new_coord_y
-                tuple1 = tuple(list1)
-                self.positions[i] = tuple1
-            elif self.positions[i][1] < 0:  # Выход за верхнюю грань
-                new_coord_y = self.positions[0][1] % 480
                 tuple1 = self.positions[i]
                 list1 = list(tuple1)
                 list1[1] = new_coord_y

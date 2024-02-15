@@ -79,68 +79,51 @@ class Snake(GameObject):
     def __init__(self):
         super().__init__()
         self.reset()
+        self.next_direction = RIGHT
 
     # Метод обновления направления после нажатия на кнопку
-    def update_direction(self):
+    def update_direction(self, next_direction):
         """Ищем новое направление."""
-        if self.next_direction:
-            self.direction = self.next_direction
+        if next_direction:
+            self.direction = next_direction
             self.next_direction = None
 
     def get_head_position(self):
         """Ищем координаты головы."""
         return self.positions[0]
 
-    def move(self):
+    def move(self, apple, stone):
         """Описание движения змейки."""
         # Изменение координат
         head = self.get_head_position()
         if self.direction == RIGHT:
-            self.positions.insert(
-                0, (head[0] + GRID_SIZE, head[1]))
+            head = (head[0] + GRID_SIZE, head[1])
         elif self.direction == LEFT:
-            self.positions.insert(
-                0, (head[0] - GRID_SIZE, head[1]))
+            head = (head[0] - GRID_SIZE, head[1])
         elif self.direction == UP:
-            self.positions.insert(
-                0, (head[0], head[1] - GRID_SIZE))
+            head = (head[0], head[1] - GRID_SIZE)
         elif self.direction == DOWN:
-            self.positions.insert(
-                0, (head[0], head[1] + GRID_SIZE))
+            head = (head[0], head[1] + GRID_SIZE)
+        x, y = head
+        x = x % SCREEN_WIDTH
+        y = y % SCREEN_HEIGHT
+        head = (x, y)
+        self.positions.insert(0, head)
         self.last = self.positions.pop()
-        # Проверка на увеличение змейки
-        if self.length > len(self.positions):
-            self.positions.append(self.last)
-        # Обраотка выхода змейки за границы экрана
-        for i in range(len(self.positions)):
-            if (self.positions[i][0] > SCREEN_WIDTH - GRID_SIZE
-                    or self.positions[i][0] < 0):
-                # Выход за грань по оси х
-                new_coord_x = self.positions[i][0] % 640
-                tuple1 = self.positions[i]
-                list1 = list(tuple1)
-                list1[0] = new_coord_x
-                tuple1 = tuple(list1)
-                self.positions[i] = tuple1
 
-            if (self.positions[i][1] > SCREEN_HEIGHT - GRID_SIZE
-                    or self.positions[i][1] < 0):
-                # Выход за грань по оси у
-                new_coord_y = self.positions[i][1] % 480
-                tuple1 = self.positions[i]
-                list1 = list(tuple1)
-                list1[1] = new_coord_y
-                tuple1 = tuple(list1)
-                self.positions[i] = tuple1
+        check_conflict(self, apple, stone)  # Проверка на столкновения
+
+        if self.length > len(self.positions):  # Проверка на увеличение змейки
+            self.positions.append(self.last)
+            self.last = None
 
     def draw(self, screen):
         """Метод draw класса Snake."""
-        for position in self.positions:
-            super().draw(screen, position, SNAKE_COLOR)
-
-        #     # Затирание последнего сегмента
-        if self.last:
+        head = self.get_head_position()
+        super().draw(screen, head, SNAKE_COLOR)
+        if self.last:  # Затирание последнего сегмента
             super().draw(screen, self.last, bord_color=BOARD_BACKGROUND_COLOR)
+        self.last = None
 
     def reset(self):
         """Сбрасываем змейку при столкновении."""
@@ -153,21 +136,38 @@ class Snake(GameObject):
         screen.fill(BOARD_BACKGROUND_COLOR)
 
 
+def check_conflict(self, apple, stone):
+    """Функция обработки столкновений."""
+    if self.positions[0] == apple.position:  # столкновение с яблоком
+        apple = Apple.randomize_position(apple)
+        self.length += 1
+    elif self.positions[0] == stone.position:  # столкновение с камнем
+        stone = Stone.randomize_position(stone)
+        self.length -= 1
+        self.positions.pop()
+        screen.fill(BOARD_BACKGROUND_COLOR)
+    elif self.length > 4:  # Проверка на столкновение с собой
+        if self.positions[0] in self.positions[1:]:
+            save_result(self.length)
+            self.reset()
+
+
 def handle_keys(game_object):
     """Функция обработки действий пользователя."""
     for event in pg.event.get():
+        dict_direction = {
+            pg.K_UP: (UP, DOWN),
+            pg.K_DOWN: (DOWN, UP),
+            pg.K_LEFT: (LEFT, RIGHT),
+            pg.K_RIGHT: (RIGHT, LEFT)}
+
         if event.type == pg.QUIT:
             pg.quit()
             raise SystemExit
-        if event.type == pg.KEYDOWN:
-            if event.key == pg.K_UP and game_object.direction != DOWN:
-                game_object.next_direction = UP
-            elif event.key == pg.K_DOWN and game_object.direction != UP:
-                game_object.next_direction = DOWN
-            elif event.key == pg.K_LEFT and game_object.direction != RIGHT:
-                game_object.next_direction = LEFT
-            elif event.key == pg.K_RIGHT and game_object.direction != LEFT:
-                game_object.next_direction = RIGHT
+        elif event.type == pg.KEYDOWN:
+            if event.key in dict_direction:
+                if game_object.direction != dict_direction[event.key][1]:
+                    game_object.next_direction = dict_direction[event.key][0]
 
 
 def save_result(winner):
@@ -184,26 +184,14 @@ def main():
     pg.font.init()
     my_font = pg.font.SysFont('Comic Sans MS', 20)
     apple = Apple()
-    snake = Snake()
     stone = Stone()
+    snake = Snake()
     while True:
         clock.tick(SPEED)
         handle_keys(snake)
-        snake.update_direction()
-        snake.move()
-        if snake.positions[0] == apple.position:  # столкновение с яблоком
-            apple = Apple()
-            snake.length += 1
-        if snake.positions[0] == stone.position:  # столкновение с препятствием
-            stone = Stone()
-            snake.length -= 1
-            snake.positions.pop()
-            screen.fill((0, 0, 0))
-        if snake.length > 4:  # Проверка на столкновение с собой
-            if snake.positions[0] in snake.positions[1:]:
-                save_result(snake.length)
-                snake.reset()
-        screen.fill(BOARD_BACKGROUND_COLOR)
+        snake.update_direction(snake.next_direction)
+        snake.move(apple, stone)
+
         text_surface = my_font.render(
             f'Ваш счёт:{snake.length-1}', False, (200, 0, 0),
             BOARD_BACKGROUND_COLOR)
@@ -216,8 +204,8 @@ def main():
         screen.blit(text_surface, (200, 0))
 
         apple.draw(screen, apple.position, APPLE_COLOR)
-        snake.draw(screen)
         stone.draw(screen, stone.position, STONE_COLOR)
+        snake.draw(screen)
         pg.display.update()
     pg.quit()
 

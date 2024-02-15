@@ -12,14 +12,16 @@ DOWN = (0, 1)
 LEFT = (-1, 0)
 RIGHT = (1, 0)
 
-BOARD_BACKGROUND_COLOR = (0, 0, 0)
+BOARD_BACKGROUND_COLOR = (173, 255, 47)
 BORDER_COLOR = (93, 216, 228)
 APPLE_COLOR = (255, 0, 0)
-STONE_COLOR = (96, 96, 96)
-SNAKE_COLOR = (0, 255, 0)
+STONE_COLOR = (128, 128, 128)
+SNAKE_COLOR = (75, 0, 130)
+WHITE = (255, 255, 255)
 SPEED = 10
 
 screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), 0, 32)
+surf1 = pg.Surface
 pg.display.set_caption('Змейка')
 clock = pg.time.Clock()
 
@@ -45,22 +47,19 @@ class GameObject():
 class Apple(GameObject):
     """Класс Яблока."""
 
-    position = (0, 0)
-
     def __init__(self):
-        # super().__init__()
+        super().__init__()
         self.body_color = APPLE_COLOR
-        self.posit = Snake.positions
         Apple.randomize_position(self)
 
     def randomize_position(self):
         """Вычисление позиции объекта."""
-        x_pos = randrange(0, SCREEN_WIDTH - GRID_SIZE, GRID_SIZE)
-        y_pos = randrange(0, SCREEN_HEIGHT - GRID_SIZE, GRID_SIZE)
-        while (x_pos, y_pos) in Snake.positions:
-            x_pos = randrange(0, SCREEN_WIDTH - GRID_SIZE, GRID_SIZE)
-            y_pos = randrange(0, SCREEN_HEIGHT - GRID_SIZE, GRID_SIZE)
-        self.position = (x_pos, y_pos)
+        x = randrange(0, SCREEN_WIDTH - GRID_SIZE, GRID_SIZE)
+        y = randrange(0, SCREEN_HEIGHT - GRID_SIZE, GRID_SIZE)
+        while (x, y) in Snake.positions:
+            x = randrange(0, SCREEN_WIDTH - GRID_SIZE, GRID_SIZE)
+            y = randrange(0, SCREEN_HEIGHT - GRID_SIZE, GRID_SIZE)
+        self.position = (x, y)
 
 
 class Stone(Apple):
@@ -68,23 +67,18 @@ class Stone(Apple):
 
     def __init__(self):
         self.body_color = STONE_COLOR
-        # super().__init__()
+        super().__init__()
         Stone.randomize_position(self)
 
 
 class Snake(GameObject):
     """Класс Змейка."""
 
-    length = 1
-    position = (0, 0, 0)
     positions = [((SCREEN_WIDTH // 2), (SCREEN_HEIGHT // 2))]
-    direction = RIGHT
-    next_direction = None
-    body_color = (0, 255, 0)
 
     def __init__(self):
-        # super().__init__()
-        self.last = None
+        super().__init__()
+        self.reset()
 
     # Метод обновления направления после нажатия на кнопку
     def update_direction(self):
@@ -98,25 +92,26 @@ class Snake(GameObject):
         return self.positions[0]
 
     def move(self):
-        """Движение змейки."""
-        self.get_head_position()
+        """Описание движения змейки."""
+        # Изменение координат
+        head = self.get_head_position()
         if self.direction == RIGHT:
             self.positions.insert(
-                0, (self.positions[0][0] + 20, self.positions[0][1]))
+                0, (head[0] + GRID_SIZE, head[1]))
         elif self.direction == LEFT:
             self.positions.insert(
-                0, (self.positions[0][0] - 20, self.positions[0][1]))
+                0, (head[0] - GRID_SIZE, head[1]))
         elif self.direction == UP:
             self.positions.insert(
-                0, (self.positions[0][0], self.positions[0][1] - 20))
+                0, (head[0], head[1] - GRID_SIZE))
         elif self.direction == DOWN:
             self.positions.insert(
-                0, (self.positions[0][0], self.positions[0][1] + 20))
+                0, (head[0], head[1] + GRID_SIZE))
         self.last = self.positions.pop()
-
+        # Проверка на увеличение змейки
         if self.length > len(self.positions):
             self.positions.append(self.last)
-
+        # Обраотка выхода змейки за границы экрана
         for i in range(len(self.positions)):
             if (self.positions[i][0] > SCREEN_WIDTH - GRID_SIZE
                     or self.positions[i][0] < 0):
@@ -140,8 +135,8 @@ class Snake(GameObject):
 
     def draw(self, screen):
         """Метод draw класса Snake."""
-        for self.position in self.positions:
-            super().draw(screen, self.position, SNAKE_COLOR,)
+        for position in self.positions:
+            super().draw(screen, position, SNAKE_COLOR)
 
         #     # Затирание последнего сегмента
         if self.last:
@@ -153,6 +148,8 @@ class Snake(GameObject):
         self.positions = [((SCREEN_WIDTH // 2), (SCREEN_HEIGHT // 2))]
         list = [UP, DOWN, RIGHT, LEFT]
         self.direction = choice(list)
+        self.last = None
+        self.next_direction = None
         screen.fill(BOARD_BACKGROUND_COLOR)
 
 
@@ -173,10 +170,19 @@ def handle_keys(game_object):
                 game_object.next_direction = RIGHT
 
 
+def save_result(winner):
+    """Обработка максимального результата для записи в файл"""
+    with open('result.txt', 'r') as f:
+        if int(f.read()) < winner:
+            f1 = open('result.txt', 'w')
+            winner = str(winner)
+            f1.write(winner)
+
+
 def main():
     """Основное тело."""
     pg.font.init()
-    my_font = pg.font.SysFont('Comic Sans MS', 30)
+    my_font = pg.font.SysFont('Comic Sans MS', 20)
     apple = Apple()
     snake = Snake()
     stone = Stone()
@@ -195,11 +201,20 @@ def main():
             screen.fill((0, 0, 0))
         if snake.length > 4:  # Проверка на столкновение с собой
             if snake.positions[0] in snake.positions[1:]:
+                save_result(snake.length)
                 snake.reset()
-
+        screen.fill(BOARD_BACKGROUND_COLOR)
         text_surface = my_font.render(
-            f'Ваш счёт:{snake.length-1}', False, (200, 0, 0), 20)
+            f'Ваш счёт:{snake.length-1}', False, (200, 0, 0),
+            BOARD_BACKGROUND_COLOR)
         screen.blit(text_surface, (0, 0))
+        f = open('result.txt')
+        best = f.read()
+        text_surface = my_font.render(
+            f'Лучший результат:{best}', False, (200, 0, 0),
+            BOARD_BACKGROUND_COLOR)
+        screen.blit(text_surface, (200, 0))
+
         apple.draw(screen, apple.position, APPLE_COLOR)
         snake.draw(screen)
         stone.draw(screen, stone.position, STONE_COLOR)

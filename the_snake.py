@@ -1,6 +1,7 @@
 from random import choice, randrange
 
 import pygame as pg
+
 pg.init()
 SCREEN_WIDTH, SCREEN_HEIGHT = 640, 480
 GRID_SIZE = 20
@@ -29,13 +30,18 @@ clock = pg.time.Clock()
 class GameObject():
     """Основной класс."""
 
-    def __init__(self):
+    def __init__(self, bodycolor=BOARD_BACKGROUND_COLOR):
         self.position = ((SCREEN_WIDTH // 2), (SCREEN_HEIGHT // 2))
-        self.body_color = (0, 0, 0)
+        self.body_color = bodycolor
 
     def draw(self, screen, position, color=BOARD_BACKGROUND_COLOR,
              bord_color=BORDER_COLOR):
         """Метод draw класса Game."""
+        pass
+
+    def draw_cell(self, screen, position, color=BOARD_BACKGROUND_COLOR,
+                  bord_color=BORDER_COLOR):
+        """Метод draw_cell класса Game."""
         rect = pg.Rect(
             position,
             (GRID_SIZE, GRID_SIZE)
@@ -47,46 +53,33 @@ class GameObject():
 class Apple(GameObject):
     """Класс Яблока."""
 
-    def __init__(self):
-        super().__init__()
-        self.body_color = APPLE_COLOR
-        Apple.randomize_position(self)
+    def __init__(self, bodycolor=APPLE_COLOR):
+        super().__init__(bodycolor)
+        self.body_color = bodycolor
+        self.randomize_position(Snake)
 
-    def randomize_position(self):
+    def randomize_position(self, snake):
         """Вычисление позиции объекта."""
         x = randrange(0, SCREEN_WIDTH - GRID_SIZE, GRID_SIZE)
         y = randrange(0, SCREEN_HEIGHT - GRID_SIZE, GRID_SIZE)
-        while (x, y) in Snake.positions:
+        while (x, y) in snake.positions:
             x = randrange(0, SCREEN_WIDTH - GRID_SIZE, GRID_SIZE)
             y = randrange(0, SCREEN_HEIGHT - GRID_SIZE, GRID_SIZE)
         self.position = (x, y)
 
 
-class Stone(Apple):
-    """Класс камня."""
-
-    def __init__(self):
-        self.body_color = STONE_COLOR
-        super().__init__()
-        Stone.randomize_position(self)
-
-
 class Snake(GameObject):
     """Класс Змейка."""
-
     positions = [((SCREEN_WIDTH // 2), (SCREEN_HEIGHT // 2))]
 
     def __init__(self):
         super().__init__()
         self.reset()
-        self.next_direction = RIGHT
 
-    # Метод обновления направления после нажатия на кнопку
     def update_direction(self, next_direction):
         """Ищем новое направление."""
         if next_direction:
             self.direction = next_direction
-            self.next_direction = None
 
     def get_head_position(self):
         """Ищем координаты головы."""
@@ -94,35 +87,25 @@ class Snake(GameObject):
 
     def move(self, apple, stone):
         """Описание движения змейки."""
-        # Изменение координат
         head = self.get_head_position()
-        if self.direction == RIGHT:
-            head = (head[0] + GRID_SIZE, head[1])
-        elif self.direction == LEFT:
-            head = (head[0] - GRID_SIZE, head[1])
-        elif self.direction == UP:
-            head = (head[0], head[1] - GRID_SIZE)
-        elif self.direction == DOWN:
-            head = (head[0], head[1] + GRID_SIZE)
+        head = (head[0] + self.direction[0] * GRID_SIZE,
+                head[1] + self.direction[1] * GRID_SIZE)
         x, y = head
         x = x % SCREEN_WIDTH
         y = y % SCREEN_HEIGHT
         head = (x, y)
         self.positions.insert(0, head)
-        self.last = self.positions.pop()
 
-        check_conflict(self, apple, stone)  # Проверка на столкновения
-
-        if self.length > len(self.positions):  # Проверка на увеличение змейки
-            self.positions.append(self.last)
-            self.last = None
+        if self.length != len(self.positions):  # Проверка на увеличение змейки
+            self.last = self.positions.pop()
 
     def draw(self, screen):
         """Метод draw класса Snake."""
         head = self.get_head_position()
-        super().draw(screen, head, SNAKE_COLOR)
+        self.draw_cell(screen, head, SNAKE_COLOR)
         if self.last:  # Затирание последнего сегмента
-            super().draw(screen, self.last, bord_color=BOARD_BACKGROUND_COLOR)
+            self.draw_cell(screen, self.last,
+                           bord_color=BOARD_BACKGROUND_COLOR)
         self.last = None
 
     def reset(self):
@@ -136,20 +119,20 @@ class Snake(GameObject):
         screen.fill(BOARD_BACKGROUND_COLOR)
 
 
-def check_conflict(self, apple, stone):
+def check_conflict(snake, apple, stone):
     """Функция обработки столкновений."""
-    if self.positions[0] == apple.position:  # столкновение с яблоком
-        apple = Apple.randomize_position(apple)
-        self.length += 1
-    elif self.positions[0] == stone.position:  # столкновение с камнем
-        stone = Stone.randomize_position(stone)
-        self.length -= 1
-        self.positions.pop()
+    if snake.positions[0] == apple.position:  # столкновение с яблоком
+        apple = Apple.randomize_position(apple, snake)
+        snake.length += 1
+    elif snake.positions[0] == stone.position:  # столкновение с камнем
+        stone = Apple.randomize_position(stone, snake)
+        snake.length -= 1
+        snake.positions.pop()
         screen.fill(BOARD_BACKGROUND_COLOR)
-    elif self.length > 4:  # Проверка на столкновение с собой
-        if self.positions[0] in self.positions[1:]:
-            save_result(self.length)
-            self.reset()
+    elif snake.length > 4:  # Проверка на столкновение с собой
+        if snake.positions[0] in snake.positions[1:]:
+            save_result(snake.length)
+            snake.reset()
 
 
 def handle_keys(game_object):
@@ -183,15 +166,15 @@ def main():
     """Основное тело."""
     pg.font.init()
     my_font = pg.font.SysFont('Comic Sans MS', 20)
-    apple = Apple()
-    stone = Stone()
     snake = Snake()
+    apple = Apple(APPLE_COLOR)
+    stone = Apple(STONE_COLOR)
     while True:
         clock.tick(SPEED)
         handle_keys(snake)
         snake.update_direction(snake.next_direction)
         snake.move(apple, stone)
-
+        check_conflict(snake, apple, stone)  # Проверка на столкновения
         text_surface = my_font.render(
             f'Ваш счёт:{snake.length-1}', False, (200, 0, 0),
             BOARD_BACKGROUND_COLOR)
@@ -203,8 +186,8 @@ def main():
             BOARD_BACKGROUND_COLOR)
         screen.blit(text_surface, (200, 0))
 
-        apple.draw(screen, apple.position, APPLE_COLOR)
-        stone.draw(screen, stone.position, STONE_COLOR)
+        apple.draw_cell(screen, apple.position, APPLE_COLOR)
+        stone.draw_cell(screen, stone.position, STONE_COLOR)
         snake.draw(screen)
         pg.display.update()
     pg.quit()

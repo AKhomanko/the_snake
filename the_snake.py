@@ -53,29 +53,31 @@ class GameObject():
 class Apple(GameObject):
     """Класс Яблока."""
 
-    def __init__(self, bodycolor=APPLE_COLOR):
+    def __init__(self, snake, bodycolor=APPLE_COLOR):
         super().__init__(bodycolor)
         self.body_color = bodycolor
-        self.randomize_position(Snake)
+        print(f'Snake: {snake}')
+        self.position = self.randomize_position(snake)
 
     def randomize_position(self, obj):
         """Вычисление позиции объекта."""
         x = randrange(0, SCREEN_WIDTH - GRID_SIZE, GRID_SIZE)
         y = randrange(0, SCREEN_HEIGHT - GRID_SIZE, GRID_SIZE)
-        while (x, y) in obj.positions:
+        print(f'obj:{obj}')
+        while (x, y) in obj:
             x = randrange(0, SCREEN_WIDTH - GRID_SIZE, GRID_SIZE)
             y = randrange(0, SCREEN_HEIGHT - GRID_SIZE, GRID_SIZE)
-        self.position = (x, y)
+        return (x, y)
 
 
-class Snake(Apple):
+class Snake(GameObject):
     """Класс Змейка."""
-    positions = [((SCREEN_WIDTH // 2), (SCREEN_HEIGHT // 2))]
 
     def __init__(self, position=[((SCREEN_WIDTH // 2), (SCREEN_HEIGHT // 2))]):
         super().__init__()
         self.reset()
         self.position = position
+        self.positions = [((SCREEN_WIDTH // 2), (SCREEN_HEIGHT // 2))]
 
     def update_direction(self, next_direction):
         """Ищем новое направление."""
@@ -86,7 +88,7 @@ class Snake(Apple):
         """Ищем координаты головы."""
         return self.positions[0]
 
-    def move(self, apple, stone):
+    def move(self):
         """Описание движения змейки."""
         head = self.get_head_position()
         head = (head[0] + self.direction[0] * GRID_SIZE,
@@ -123,10 +125,10 @@ class Snake(Apple):
 def check_conflict(snake, apple, stone):
     """Функция обработки столкновений."""
     if snake.positions[0] == apple.position:  # столкновение с яблоком
-        apple = Apple.randomize_position(apple, snake)
+        apple.position = apple.randomize_position(apple)
         snake.length += 1
     elif snake.positions[0] == stone.position:  # столкновение с камнем
-        stone = Apple.randomize_position(stone, snake)
+        stone.position = apple.randomize_position(stone)
         snake.length -= 1
         snake.positions.pop()
         screen.fill(BOARD_BACKGROUND_COLOR)
@@ -170,13 +172,14 @@ def main():
     f = open('result.txt')
     best = f.read()
     snake = Snake()
-    apple = Apple(APPLE_COLOR)
+    print(f'1{snake.positions}')
+    apple = Apple(snake.positions, bodycolor=APPLE_COLOR)
     stone = Apple(STONE_COLOR)
     while True:
         clock.tick(SPEED)
         handle_keys(snake)
         snake.update_direction(snake.next_direction)
-        snake.move(apple, stone)
+        snake.move()
         check_conflict(snake, apple, stone)  # Проверка на столкновения
         text_surface = my_font.render(
             f'Ваш счёт:{snake.length-1}', False, (200, 0, 0),

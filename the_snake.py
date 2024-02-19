@@ -26,6 +26,12 @@ surf1 = pg.Surface
 pg.display.set_caption('Змейка')
 clock = pg.time.Clock()
 
+dict_direction = {pg.K_UP: (UP, DOWN),
+                  pg.K_DOWN: (DOWN, UP),
+                  pg.K_LEFT: (LEFT, RIGHT),
+                  pg.K_RIGHT: (RIGHT, LEFT)}
+list = [UP, DOWN, RIGHT, LEFT]
+
 
 class GameObject():
     """Основной класс."""
@@ -56,7 +62,6 @@ class Apple(GameObject):
     def __init__(self, snake_pos=((SCREEN_WIDTH // 2), (SCREEN_HEIGHT // 2)),
                  bodycolor=APPLE_COLOR):
         super().__init__(bodycolor)
-        self.body_color = bodycolor
         self.position = self.randomize_position(snake_pos)
 
     def randomize_position(self, snake_pos):
@@ -75,8 +80,6 @@ class Snake(GameObject):
     def __init__(self, position=[((SCREEN_WIDTH // 2), (SCREEN_HEIGHT // 2))]):
         super().__init__()
         self.reset()
-        self.position = position
-        self.positions = [((SCREEN_WIDTH // 2), (SCREEN_HEIGHT // 2))]
 
     def update_direction(self, next_direction):
         """Ищем новое направление."""
@@ -90,16 +93,14 @@ class Snake(GameObject):
     def move(self):
         """Описание движения змейки."""
         head = self.get_head_position()
-        head = (head[0] + self.direction[0] * GRID_SIZE,
-                head[1] + self.direction[1] * GRID_SIZE)
-        x, y = head
-        x = x % SCREEN_WIDTH
-        y = y % SCREEN_HEIGHT
-        head = (x, y)
+        head = ((head[0] + self.direction[0] * GRID_SIZE) % SCREEN_WIDTH,
+                (head[1] + self.direction[1] * GRID_SIZE) % SCREEN_HEIGHT)
         self.positions.insert(0, head)
 
         if self.length != len(self.positions):  # Проверка на увеличение змейки
             self.last = self.positions.pop()
+        else:
+            self.last = None
 
     def draw(self, screen):
         """Метод draw класса Snake."""
@@ -108,25 +109,23 @@ class Snake(GameObject):
         if self.last:  # Затирание последнего сегмента
             self.draw_cell(screen, self.last,
                            bord_color=BOARD_BACKGROUND_COLOR)
-        self.last = None
 
     def reset(self):
         """Сбрасываем змейку при столкновении."""
         self.length = 1
         self.positions = [((SCREEN_WIDTH // 2), (SCREEN_HEIGHT // 2))]
-        list = [UP, DOWN, RIGHT, LEFT]
         self.direction = choice(list)
         self.last = None
         self.next_direction = None
-        screen.fill(BOARD_BACKGROUND_COLOR)
 
 
 def check_conflict(snake, apple, stone):
     """Функция обработки столкновений."""
-    if snake.positions[0] == apple.position:  # столкновение с яблоком
+    head = snake.get_head_position()
+    if head in [apple.position]:  # столкновение с яблоком
         apple.position = apple.randomize_position(snake.positions)
         snake.length += 1
-    elif snake.positions[0] == stone.position:  # столкновение с камнем
+    elif head in [stone.position]:  # столкновение с камнем
         stone.position = stone.randomize_position(snake.positions)
         snake.length -= 1
         snake.positions.pop()
@@ -135,17 +134,12 @@ def check_conflict(snake, apple, stone):
         if snake.positions[0] in snake.positions[1:]:
             save_result(snake.length)
             snake.reset()
+            screen.fill(BOARD_BACKGROUND_COLOR)
 
 
 def handle_keys(game_object):
     """Функция обработки действий пользователя."""
     for event in pg.event.get():
-        dict_direction = {
-            pg.K_UP: (UP, DOWN),
-            pg.K_DOWN: (DOWN, UP),
-            pg.K_LEFT: (LEFT, RIGHT),
-            pg.K_RIGHT: (RIGHT, LEFT)}
-
         if event.type == pg.QUIT:
             pg.quit()
             raise SystemExit
@@ -168,11 +162,13 @@ def main():
     """Основное тело."""
     pg.font.init()
     my_font = pg.font.SysFont('Comic Sans MS', 20)
-    f = open('result.txt')
-    best = f.read()
+    with open('result.txt', 'r') as f:
+        best = f.read()
     snake = Snake()
     apple = Apple(snake.positions, bodycolor=APPLE_COLOR)
     stone = Apple(snake.positions, bodycolor=STONE_COLOR)
+    screen.fill(BOARD_BACKGROUND_COLOR)
+
     while True:
         clock.tick(SPEED)
         handle_keys(snake)

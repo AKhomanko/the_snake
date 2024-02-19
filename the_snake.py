@@ -58,23 +58,24 @@ class Apple(GameObject):
         self.body_color = bodycolor
         self.randomize_position(Snake)
 
-    def randomize_position(self, snake):
+    def randomize_position(self, obj):
         """Вычисление позиции объекта."""
         x = randrange(0, SCREEN_WIDTH - GRID_SIZE, GRID_SIZE)
         y = randrange(0, SCREEN_HEIGHT - GRID_SIZE, GRID_SIZE)
-        while (x, y) in snake.positions:
+        while (x, y) in obj.positions:
             x = randrange(0, SCREEN_WIDTH - GRID_SIZE, GRID_SIZE)
             y = randrange(0, SCREEN_HEIGHT - GRID_SIZE, GRID_SIZE)
         self.position = (x, y)
 
 
-class Snake(GameObject):
+class Snake(Apple):
     """Класс Змейка."""
     positions = [((SCREEN_WIDTH // 2), (SCREEN_HEIGHT // 2))]
 
-    def __init__(self):
+    def __init__(self, position=[((SCREEN_WIDTH // 2), (SCREEN_HEIGHT // 2))]):
         super().__init__()
         self.reset()
+        self.position = position
 
     def update_direction(self, next_direction):
         """Ищем новое направление."""
@@ -166,6 +167,8 @@ def main():
     """Основное тело."""
     pg.font.init()
     my_font = pg.font.SysFont('Comic Sans MS', 20)
+    f = open('result.txt')
+    best = f.read()
     snake = Snake()
     apple = Apple(APPLE_COLOR)
     stone = Apple(STONE_COLOR)
@@ -178,9 +181,7 @@ def main():
         text_surface = my_font.render(
             f'Ваш счёт:{snake.length-1}', False, (200, 0, 0),
             BOARD_BACKGROUND_COLOR)
-        screen.blit(text_surface, (0, 0))
-        f = open('result.txt')
-        best = f.read()
+        screen.blit(text_surface, (0, 0))      
         text_surface = my_font.render(
             f'Лучший результат:{best}', False, (200, 0, 0),
             BOARD_BACKGROUND_COLOR)

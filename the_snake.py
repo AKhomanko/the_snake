@@ -53,18 +53,17 @@ class GameObject():
 class Apple(GameObject):
     """Класс Яблока."""
 
-    def __init__(self, snake, bodycolor=APPLE_COLOR):
+    def __init__(self, snake_pos=((SCREEN_WIDTH // 2), (SCREEN_HEIGHT // 2)),
+                 bodycolor=APPLE_COLOR):
         super().__init__(bodycolor)
         self.body_color = bodycolor
-        print(f'Snake: {snake}')
-        self.position = self.randomize_position(snake)
+        self.position = self.randomize_position(snake_pos)
 
-    def randomize_position(self, obj):
+    def randomize_position(self, snake_pos):
         """Вычисление позиции объекта."""
         x = randrange(0, SCREEN_WIDTH - GRID_SIZE, GRID_SIZE)
         y = randrange(0, SCREEN_HEIGHT - GRID_SIZE, GRID_SIZE)
-        print(f'obj:{obj}')
-        while (x, y) in obj:
+        while (x, y) in snake_pos:
             x = randrange(0, SCREEN_WIDTH - GRID_SIZE, GRID_SIZE)
             y = randrange(0, SCREEN_HEIGHT - GRID_SIZE, GRID_SIZE)
         return (x, y)
@@ -125,10 +124,10 @@ class Snake(GameObject):
 def check_conflict(snake, apple, stone):
     """Функция обработки столкновений."""
     if snake.positions[0] == apple.position:  # столкновение с яблоком
-        apple.position = apple.randomize_position(apple)
+        apple.position = apple.randomize_position(snake.positions)
         snake.length += 1
     elif snake.positions[0] == stone.position:  # столкновение с камнем
-        stone.position = apple.randomize_position(stone)
+        stone.position = stone.randomize_position(snake.positions)
         snake.length -= 1
         snake.positions.pop()
         screen.fill(BOARD_BACKGROUND_COLOR)
@@ -172,9 +171,8 @@ def main():
     f = open('result.txt')
     best = f.read()
     snake = Snake()
-    print(f'1{snake.positions}')
     apple = Apple(snake.positions, bodycolor=APPLE_COLOR)
-    stone = Apple(STONE_COLOR)
+    stone = Apple(snake.positions, bodycolor=STONE_COLOR)
     while True:
         clock.tick(SPEED)
         handle_keys(snake)
@@ -184,7 +182,7 @@ def main():
         text_surface = my_font.render(
             f'Ваш счёт:{snake.length-1}', False, (200, 0, 0),
             BOARD_BACKGROUND_COLOR)
-        screen.blit(text_surface, (0, 0))      
+        screen.blit(text_surface, (0, 0))
         text_surface = my_font.render(
             f'Лучший результат:{best}', False, (200, 0, 0),
             BOARD_BACKGROUND_COLOR)

@@ -26,11 +26,11 @@ surf1 = pg.Surface
 pg.display.set_caption('Змейка')
 clock = pg.time.Clock()
 
-dict_direction = {pg.K_UP: (UP, DOWN),
-                  pg.K_DOWN: (DOWN, UP),
-                  pg.K_LEFT: (LEFT, RIGHT),
-                  pg.K_RIGHT: (RIGHT, LEFT)}
-list = [UP, DOWN, RIGHT, LEFT]
+DICT_DIRECTIONS = {pg.K_UP: (UP, DOWN),
+                   pg.K_DOWN: (DOWN, UP),
+                   pg.K_LEFT: (LEFT, RIGHT),
+                   pg.K_RIGHT: (RIGHT, LEFT)}
+LIST_DIRECTIONS = [UP, DOWN, RIGHT, LEFT]
 
 
 class GameObject():
@@ -77,7 +77,8 @@ class Apple(GameObject):
 class Snake(GameObject):
     """Класс Змейка."""
 
-    def __init__(self, position=[((SCREEN_WIDTH // 2), (SCREEN_HEIGHT // 2))]):
+    def __init__(self, position=[((SCREEN_WIDTH // 2), (SCREEN_HEIGHT // 2))],
+                 color=SNAKE_COLOR):
         super().__init__()
         self.reset()
 
@@ -114,7 +115,7 @@ class Snake(GameObject):
         """Сбрасываем змейку при столкновении."""
         self.length = 1
         self.positions = [((SCREEN_WIDTH // 2), (SCREEN_HEIGHT // 2))]
-        self.direction = choice(list)
+        self.direction = choice(LIST_DIRECTIONS)
         self.last = None
         self.next_direction = None
 
@@ -144,17 +145,17 @@ def handle_keys(game_object):
             pg.quit()
             raise SystemExit
         elif event.type == pg.KEYDOWN:
-            if event.key in dict_direction:
-                if game_object.direction != dict_direction[event.key][1]:
-                    game_object.next_direction = dict_direction[event.key][0]
+            if event.key in DICT_DIRECTIONS:
+                if game_object.direction != DICT_DIRECTIONS[event.key][1]:
+                    game_object.next_direction = DICT_DIRECTIONS[event.key][0]
 
 
-def save_result(winner):
+def save_result(new_best):
     """Обработка максимального результата для записи в файл"""
     with open('result.txt', 'r') as f:
-        if int(f.read()) < winner:
+        if int(f.read()) < new_best:
             f1 = open('result.txt', 'w')
-            winner = str(winner)
+            winner = str(new_best)
             f1.write(winner)
 
 

@@ -157,7 +157,6 @@ def save_result(new_best):
         old_best = int(f.read())
         if old_best < new_best:
             f.seek(0)
-            #f1 = open('result.txt', 'w')
             winner = str(new_best)
             f.write(winner)
 

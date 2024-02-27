@@ -22,15 +22,14 @@ WHITE = (255, 255, 255)
 SPEED = 10
 
 screen = pg.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), 0, 32)
-surf1 = pg.Surface
 pg.display.set_caption('Змейка')
 clock = pg.time.Clock()
 
-DICT_DIRECTIONS = {pg.K_UP: (UP, DOWN),
-                   pg.K_DOWN: (DOWN, UP),
-                   pg.K_LEFT: (LEFT, RIGHT),
-                   pg.K_RIGHT: (RIGHT, LEFT)}
-LIST_DIRECTIONS = [UP, DOWN, RIGHT, LEFT]
+COORD_DIRECTIONS = {pg.K_UP: (UP, DOWN),
+                    pg.K_DOWN: (DOWN, UP),
+                    pg.K_LEFT: (LEFT, RIGHT),
+                    pg.K_RIGHT: (RIGHT, LEFT)}
+DIRECTIONS = [UP, DOWN, RIGHT, LEFT]
 
 
 class GameObject():
@@ -115,7 +114,7 @@ class Snake(GameObject):
         """Сбрасываем змейку при столкновении."""
         self.length = 1
         self.positions = [((SCREEN_WIDTH // 2), (SCREEN_HEIGHT // 2))]
-        self.direction = choice(LIST_DIRECTIONS)
+        self.direction = choice(DIRECTIONS)
         self.last = None
         self.next_direction = None
 
@@ -133,30 +132,34 @@ def check_conflict(snake, apple, stone):
         screen.fill(BOARD_BACKGROUND_COLOR)
     elif snake.length > 4:  # Проверка на столкновение с собой
         if snake.positions[0] in snake.positions[1:]:
-            save_result(snake.length)
+            new_best = snake.length
+            save_result(new_best)
             snake.reset()
             screen.fill(BOARD_BACKGROUND_COLOR)
 
 
-def handle_keys(game_object):
+def handle_keys(object):
     """Функция обработки действий пользователя."""
     for event in pg.event.get():
         if event.type == pg.QUIT:
             pg.quit()
             raise SystemExit
         elif event.type == pg.KEYDOWN:
-            if event.key in DICT_DIRECTIONS:
-                if game_object.direction != DICT_DIRECTIONS[event.key][1]:
-                    game_object.next_direction = DICT_DIRECTIONS[event.key][0]
+            if event.key in COORD_DIRECTIONS:
+                if object.direction != COORD_DIRECTIONS[event.key][1]:
+                    object.next_direction = COORD_DIRECTIONS[event.key][0]
+    object.update_direction(object.next_direction)
 
 
 def save_result(new_best):
     """Обработка максимального результата для записи в файл"""
-    with open('result.txt', 'r') as f:
-        if int(f.read()) < new_best:
-            f1 = open('result.txt', 'w')
+    with open('result.txt', 'r+') as f:
+        old_best = int(f.read())
+        if old_best < new_best:
+            f.seek(0)
+            #f1 = open('result.txt', 'w')
             winner = str(new_best)
-            f1.write(winner)
+            f.write(winner)
 
 
 def main():
@@ -173,7 +176,6 @@ def main():
     while True:
         clock.tick(SPEED)
         handle_keys(snake)
-        snake.update_direction(snake.next_direction)
         snake.move()
         check_conflict(snake, apple, stone)  # Проверка на столкновения
         text_surface = my_font.render(
